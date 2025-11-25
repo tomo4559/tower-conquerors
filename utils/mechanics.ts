@@ -14,14 +14,25 @@ export const calculateTotalAttack = (player: Player, equipped: Partial<Record<Eq
 export const generateEnemy = (floor: number): Enemy => {
   if (floor % 10 === 0) {
     const bossData = BOSS_TYPES[floor as keyof typeof BOSS_TYPES] || BOSS_TYPES[100]; // Fallback to last boss
-    // Scale boss if beyond 100
-    const scaler = Math.max(1, floor / 50);
+    
+    // Base linear scaler (roughly doubles stats by floor 100 compared to floor 50)
+    const baseScaler = Math.max(1, floor / 50);
+
+    // Tier scaler: Multiplies strength by 2 for every 100 floors passed
+    // 1-100: 2^0 = 1x
+    // 101-200: 2^1 = 2x
+    // 201-300: 2^2 = 4x
+    // 301-400: 2^3 = 8x
+    const tierScaler = Math.pow(2, Math.floor((floor - 1) / 100));
+    
+    const totalScaler = baseScaler * tierScaler;
+
     return {
       name: bossData.name,
-      maxHp: Math.floor(bossData.hp * scaler),
-      currentHp: Math.floor(bossData.hp * scaler),
-      goldReward: Math.floor(bossData.gold * scaler),
-      xpReward: Math.floor(bossData.xp * scaler),
+      maxHp: Math.floor(bossData.hp * totalScaler),
+      currentHp: Math.floor(bossData.hp * totalScaler),
+      goldReward: Math.floor(bossData.gold * totalScaler),
+      xpReward: Math.floor(bossData.xp * totalScaler),
       isBoss: true
     };
   }
