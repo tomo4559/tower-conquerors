@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Deployment config (Ignored as per user request to manage manually on GitHub)
+.github/workflows/deploy.yml
