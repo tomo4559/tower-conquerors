@@ -1,6 +1,7 @@
 import React from 'react';
 import { Enemy, Player } from '../../types';
 import { ProgressBar } from '../ui/ProgressBar';
+import { BOSS_TIME_LIMIT } from '../../constants';
 
 interface BattleViewProps {
   enemy: Enemy | null;
@@ -16,10 +17,10 @@ export const BattleView: React.FC<BattleViewProps> = ({ enemy, player, bossTimer
       {/* Boss Overlay */}
       {enemy.isBoss && bossTimer !== null && (
         <div className="absolute top-1 right-2 left-2 z-10 opacity-90">
-           <div className={`text-center font-mono font-bold text-sm ${bossTimer < 15 ? 'text-red-500 animate-pulse' : 'text-slate-200'}`}>
+           <div className={`text-center font-mono font-bold text-sm ${bossTimer < 10 ? 'text-red-500 animate-pulse' : 'text-slate-200'}`}>
              BOSS: {bossTimer.toFixed(0)}s
            </div>
-           <ProgressBar value={bossTimer} max={60} color={bossTimer < 15 ? 'bg-red-500' : 'bg-amber-500'} className="mt-0.5" height="h-1" />
+           <ProgressBar value={bossTimer} max={BOSS_TIME_LIMIT} color={bossTimer < 10 ? 'bg-red-500' : 'bg-amber-500'} className="mt-0.5" height="h-1" />
         </div>
       )}
 

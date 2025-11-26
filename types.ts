@@ -5,12 +5,21 @@ export enum EquipmentType {
   SHIELD = 'SHIELD'
 }
 
+export enum EquipmentRank {
+  D = 'D',
+  C = 'C',
+  B = 'B',
+  A = 'A',
+  S = 'S'
+}
+
 export interface Equipment {
   id: string;
   name: string;
   type: EquipmentType;
   power: number;
   isEquipped: boolean;
+  rank: EquipmentRank;
 }
 
 export enum JobType {
@@ -29,6 +38,7 @@ export enum JobType {
 export interface JobData {
   name: JobType;
   multiplier: number;
+  unlockLevel: number; // Level required in previous job to unlock this
   skills: SkillData[];
 }
 
@@ -53,6 +63,16 @@ export interface SkillMastery {
   count: number;
 }
 
+export interface MerchantUpgrades {
+  attackBonus: number;      // 攻撃UP (+10/lv)
+  critRate: number;         // クリティカル率UP (+1%/lv)
+  critDamage: number;       // クリティカルダメージUP (+10%/lv)
+  weaponBoost: number;      // 武器補正 (+1%/lv)
+  helmBoost: number;        // 兜補正 (+1%/lv)
+  armorBoost: number;       // 鎧補正 (+1%/lv)
+  shieldBoost: number;      // 盾補正 (+1%/lv)
+}
+
 export interface Player {
   level: number;
   currentXp: number;
@@ -64,12 +84,14 @@ export interface Player {
   baseAttack: number;
   maxHp: number; // For visualization, though player doesn't take damage in this spec
   skillMastery: Record<string, SkillMastery>; // Key is skill name
+  reincarnationStones: number;
+  merchantUpgrades: MerchantUpgrades;
 }
 
 export interface LogEntry {
   id: string;
   message: string;
-  type: 'damage' | 'gain' | 'info' | 'boss' | 'danger';
+  type: 'damage' | 'gain' | 'info' | 'boss' | 'danger' | 'crit';
   timestamp: number;
 }
 
@@ -83,4 +105,5 @@ export interface GameState {
   logs: LogEntry[];
   bossTimer: number | null; // null if not boss fight, otherwise seconds remaining
   autoBattleEnabled: boolean;
+  hardMode: boolean;
 }
