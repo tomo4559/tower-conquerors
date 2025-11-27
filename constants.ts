@@ -1,5 +1,5 @@
 
-import { JobType, JobData, EquipmentType, SkillData, EquipmentRank, ReincarnationUpgrades } from './types';
+import { JobType, JobData, EquipmentType, SkillData, EquipmentRank, ReincarnationUpgrades, MerchantUpgrades } from './types';
 
 export const TICK_RATE_MS = 1000; // Battle tick every 1 second (base speed)
 export const BOSS_TIME_LIMIT = 30; // Seconds
@@ -137,7 +137,7 @@ export const EQUIP_NAMES = {
   [EquipmentType.SHIELD]: ['木の盾', '鉄の盾', 'タワーシールド', 'ミラーシールド', 'イージス'],
 };
 
-export const MERCHANT_ITEMS = [
+export const MERCHANT_ITEMS: { key: keyof MerchantUpgrades, name: string, desc: string, baseCost: number }[] = [
   { key: 'attackBonus', name: '攻撃力UP', desc: '基礎攻撃力 +10', baseCost: 100 },
   { key: 'critRate', name: 'クリティカル率UP', desc: 'クリティカル率 +1%', baseCost: 100 },
   { key: 'critDamage', name: 'クリティカルダメUP', desc: 'クリティカルダメージ +10%', baseCost: 100 },
