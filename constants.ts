@@ -1,6 +1,7 @@
-import { JobType, JobData, EquipmentType, SkillData, EquipmentRank } from './types';
 
-export const TICK_RATE_MS = 1000; // Battle tick every 1 second
+import { JobType, JobData, EquipmentType, SkillData, EquipmentRank, ReincarnationUpgrades } from './types';
+
+export const TICK_RATE_MS = 1000; // Battle tick every 1 second (base speed)
 export const BOSS_TIME_LIMIT = 30; // Seconds
 
 // Equipment Ranks
@@ -140,8 +141,60 @@ export const MERCHANT_ITEMS = [
   { key: 'attackBonus', name: '攻撃力UP', desc: '基礎攻撃力 +10', baseCost: 100 },
   { key: 'critRate', name: 'クリティカル率UP', desc: 'クリティカル率 +1%', baseCost: 100 },
   { key: 'critDamage', name: 'クリティカルダメUP', desc: 'クリティカルダメージ +10%', baseCost: 100 },
-  { key: 'weaponBoost', name: '武器強化', desc: '武器の攻撃力 +1%', baseCost: 100 },
-  { key: 'helmBoost', name: '兜強化', desc: '兜の攻撃力 +1%', baseCost: 100 },
-  { key: 'armorBoost', name: '鎧強化', desc: '鎧の攻撃力 +1%', baseCost: 100 },
-  { key: 'shieldBoost', name: '盾強化', desc: '盾の攻撃力 +1%', baseCost: 100 },
-] as const;
+  { key: 'weaponBoost', name: '武器強化', desc: '武器の性能 +1%', baseCost: 500 },
+  { key: 'helmBoost', name: '兜強化', desc: '兜の性能 +1%', baseCost: 500 },
+  { key: 'armorBoost', name: '鎧強化', desc: '鎧の性能 +1%', baseCost: 500 },
+  { key: 'shieldBoost', name: '盾強化', desc: '盾の性能 +1%', baseCost: 500 },
+];
+
+export const REINCARNATION_ITEMS: { key: keyof ReincarnationUpgrades, name: string, desc: string, baseCost: number }[] = [
+  { key: 'autoPromote', name: '自動転職', desc: '条件を満たすと自動で転職 (Lvに応じて上位解放)', baseCost: 10000 },
+  { key: 'autoEquip', name: '自動最強装備', desc: 'より強い装備を入手時に自動装備', baseCost: 10000000 },
+  { key: 'xpBoost', name: '経験値UP', desc: '獲得経験値 +1%', baseCost: 10 },
+  { key: 'goldBoost', name: 'ゴールドUP', desc: '獲得ゴールド +1%', baseCost: 10 },
+  { key: 'stoneBoost', name: '転生石UP', desc: '獲得転生石 +1%', baseCost: 100 },
+  { key: 'startFloor', name: '階層スキップ', desc: '開始階層 +100', baseCost: 500 },
+  { key: 'equipAProb', name: 'A装備率UP', desc: 'Aランク装備ドロップ率 +1%', baseCost: 1000 },
+  { key: 'equipSProb', name: 'S装備率UP', desc: 'Sランク装備ドロップ率 +1%', baseCost: 10000 },
+  { key: 'baseAttackBoost', name: '攻撃力UP', desc: '基礎攻撃力 +100', baseCost: 10000 },
+  // Skill probabilities
+  { key: 'prob_slash', name: 'スラッシュ率UP', desc: '発動率 +1%', baseCost: 500 },
+  { key: 'prob_power_attack', name: 'パワーアタック率UP', desc: '発動率 +1%', baseCost: 1000 },
+  { key: 'prob_holy_strike', name: 'ホーリーストライク率UP', desc: '発動率 +1%', baseCost: 2000 },
+  { key: 'prob_divine', name: 'ディバイン率UP', desc: '発動率 +1%', baseCost: 5000 },
+  { key: 'prob_meteor', name: 'メテオ率UP', desc: '発動率 +1%', baseCost: 10000 },
+  { key: 'prob_galaxy', name: 'ギャラクシー率UP', desc: '発動率 +1%', baseCost: 20000 },
+  { key: 'prob_void', name: 'ヴォイド率UP', desc: '発動率 +1%', baseCost: 50000 },
+  { key: 'prob_god_blow', name: 'ゴッドブロウ率UP', desc: '発動率 +1%', baseCost: 100000 },
+  { key: 'prob_infinity', name: 'インフィニティ率UP', desc: '発動率 +1%', baseCost: 200000 },
+  { key: 'prob_legend', name: 'レジェンド率UP', desc: '発動率 +1%', baseCost: 500000 },
+];
+
+export const SKILL_REINCARNATION_MAP: Record<string, keyof ReincarnationUpgrades> = {
+  'スラッシュ': 'prob_slash',
+  'パワーアタック': 'prob_power_attack',
+  'ホーリーストライク': 'prob_holy_strike',
+  'ディバインジャッジメント': 'prob_divine',
+  'メテオスラッシュ': 'prob_meteor',
+  'ギャラクシーブレイク': 'prob_galaxy',
+  'ヴォイドストライク': 'prob_void',
+  'ゴッドブロウ': 'prob_god_blow',
+  'インフィニティエッジ': 'prob_infinity',
+  'レジェンドオーラ': 'prob_legend',
+};
+
+export const UPDATE_HISTORY = [
+  { version: 'v1.4.0', date: '2025-11-27', desc: 'UI改善: 更新履歴、概要、詳細ステータス画面を追加しました。' },
+  { version: 'v1.3.0', date: '2025-11-26', desc: '数値表記の改善: M(100万)の次にG(100億)を追加しました。ダメージ表記も見やすくなりました。' },
+  { version: 'v1.2.0', date: '2025-11-25', desc: '機能追加: ゲームスピード倍速機能(x2, x3)、転生スキルに「自動転職」「自動最強装備」を追加しました。' },
+  { version: 'v1.1.0', date: '2025-11-24', desc: 'システム調整: 転生石の獲得量を100階以降で増量、スキルごとの発動率強化を追加しました。' },
+  { version: 'v1.0.0', date: '2025-11-23', desc: 'リリース: タワー攻略者たち正式稼働開始。' },
+];
+
+export const GAME_MANUAL = [
+  { title: 'ゲームの目的', content: '塔の最上階を目指してひたすら敵を倒し続ける放置系RPGです。敵を倒して経験値とゴールドを稼ぎ、キャラクターを強化しましょう。' },
+  { title: '職業とスキル', content: 'レベルが上がると新しい職業に転職できます。職業ごとに強力なスキルやステータス倍率が設定されています。「職業」タブから転職条件を確認できます。' },
+  { title: '装備と強化', content: '敵は装備品をドロップすることがあります。より強い装備を手に入れたら「装備」タブで変更しましょう。「商人」から装備の基礎性能を底上げするアップグレードも購入可能です。' },
+  { title: '転生システム', content: '100階に到達すると「転生」が可能になります。転生するとレベルや装備はリセットされますが、「転生石」を獲得できます。転生石を使って、通常プレイでは得られない強力な永続スキルを獲得できます。' },
+  { title: '自動化', content: '転生スキルを進めていくと、「自動転職」や「自動装備」などの便利機能が解放され、より快適に放置プレイが可能になります。' },
+];

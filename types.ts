@@ -73,6 +73,30 @@ export interface MerchantUpgrades {
   shieldBoost: number;      // 盾補正 (+1%/lv)
 }
 
+export interface ReincarnationUpgrades {
+  xpBoost: number;          // 経験値UP (+1%/lv)
+  goldBoost: number;        // ゴールドUP (+1%/lv)
+  stoneBoost: number;       // 転生石UP (+1%/lv)
+  startFloor: number;       // 開始階層UP (+100階/lv)
+  equipAProb: number;       // A装備獲得率UP (+1%/lv)
+  equipSProb: number;       // S装備獲得率UP (+1%/lv)
+  baseAttackBoost: number;  // 基礎攻撃力UP (+100/lv)
+  autoPromote: number;      // 自動転職 (Lv check against job index)
+  autoEquip: number;        // 自動最強装備 (0 or 1)
+  
+  // Skill Specific Probabilities (+1%/lv)
+  prob_slash: number;
+  prob_power_attack: number;
+  prob_holy_strike: number;
+  prob_divine: number;
+  prob_meteor: number;
+  prob_galaxy: number;
+  prob_void: number;
+  prob_god_blow: number;
+  prob_infinity: number;
+  prob_legend: number;
+}
+
 export interface Player {
   level: number;
   currentXp: number;
@@ -81,11 +105,13 @@ export interface Player {
   jobLevel: number;
   gold: number;
   floor: number;
+  maxFloorReached: number; // Track max floor for reincarnation limit
   baseAttack: number;
   maxHp: number; // For visualization, though player doesn't take damage in this spec
   skillMastery: Record<string, SkillMastery>; // Key is skill name
   reincarnationStones: number;
   merchantUpgrades: MerchantUpgrades;
+  reincarnationUpgrades: ReincarnationUpgrades;
 }
 
 export interface LogEntry {

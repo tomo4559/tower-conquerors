@@ -1,15 +1,31 @@
 import { ENEMY_TYPES, BOSS_TYPES, JOB_DEFINITIONS, EQUIP_NAMES, RANK_DATA } from '../constants';
-import { Player, Enemy, Equipment, EquipmentType, JobType, LogEntry, EquipmentRank } from '../types';
+import { Player, Enemy, Equipment, EquipmentType, JobType, LogEntry, EquipmentRank, ReincarnationUpgrades } from '../types';
 
 export const calculateUpgradeCost = (baseCost: number, currentLevel: number): number => {
   // Cost = Base * (1.2 ^ Level)
   return Math.floor(baseCost * Math.pow(1.2, currentLevel));
 };
 
+export const formatNumber = (num: number): string => {
+  if (num >= 10000000000) {
+    return Math.floor(num / 1000000000) + 'G';
+  }
+  if (num >= 10000000) {
+    return Math.floor(num / 1000000) + 'M';
+  }
+  if (num >= 10000) {
+    return Math.floor(num / 1000) + 'k';
+  }
+  return num.toLocaleString();
+};
+
 export const calculateTotalAttack = (player: Player, equipped: Partial<Record<EquipmentType, Equipment>>): number => {
   // 1. Merchant Attack Bonus (+10 per level)
   const merchantAtkBonus = (player.merchantUpgrades?.attackBonus || 0) * 10;
   
+  // 1.5 Reincarnation Attack Bonus (+100 per level)
+  const reincarnationAtkBonus = (player.reincarnationUpgrades?.baseAttackBoost || 0) * 100;
+
   // 2. Equipment Calculation with Merchant Boosts
   let equipmentBonus = 0;
   
@@ -33,8 +49,8 @@ export const calculateTotalAttack = (player: Player, equipped: Partial<Record<Eq
     }
   });
 
-  // Base Attack + Merchant Flat Bonus + Equipment Total
-  const totalBase = player.baseAttack + merchantAtkBonus + equipmentBonus;
+  // Base Attack + Merchant Flat Bonus + Reincarnation Flat Bonus + Equipment Total
+  const totalBase = player.baseAttack + merchantAtkBonus + reincarnationAtkBonus + equipmentBonus;
 
   // Job Multiplier
   const jobMultiplier = JOB_DEFINITIONS[player.job].multiplier;
@@ -81,6 +97,27 @@ export const calculateBossStats = (targetFloor: number): { hp: number, gold: num
       gold: Math.floor(bossData.gold * totalScaler),
       xp: Math.floor(bossData.xp * totalScaler)
   };
+};
+
+export const calculateReincarnationStones = (floor: number, multiplier: number): number => {
+  if (floor < 100) return 0;
+  
+  let stones = 100; // Base for floor 100
+  
+  // For floors > 100, we add stones based on 10-floor increments
+  // 100F: 100
+  // 110F: 100 + 1 = 101
+  // 120F: 101 + 2 = 103
+  // 130F: 103 + 4 = 107
+  // ... and so on
+  
+  const increments = Math.floor((floor - 100) / 10);
+  
+  for (let i = 1; i <= increments; i++) {
+    stones += Math.pow(2, i - 1);
+  }
+  
+  return Math.floor(stones * multiplier);
 };
 
 export const generateEnemy = (floor: number, isHardMode: boolean = false): Enemy => {
@@ -148,19 +185,33 @@ export const generateEnemy = (floor: number, isHardMode: boolean = false): Enemy
   };
 };
 
-export const generateDrop = (floor: number, isBoss: boolean = false): Equipment | null => {
+export const generateDrop = (floor: number, upgrades: ReincarnationUpgrades, isBoss: boolean = false): Equipment | null => {
   // 30% chance to drop
   if (Math.random() > 0.3) return null;
 
-  // Select Rank
+  // Select Rank - Check High Rarity First to allow upgrades to matter more intuitively
   let rank = EquipmentRank.D;
   const rand = Math.random();
-  const ranks = [EquipmentRank.D, EquipmentRank.C, EquipmentRank.B, EquipmentRank.A, EquipmentRank.S];
+  
+  // Reincarnation Probabilities
+  const sBonus = (upgrades?.equipSProb || 0) * 0.01;
+  const aBonus = (upgrades?.equipAProb || 0) * 0.01;
+
+  // We iterate from highest rarity to lowest, using the probability + bonus
+  // If random < cumulative_prob, we take it.
+  
+  const rankCheckOrder = [EquipmentRank.S, EquipmentRank.A, EquipmentRank.B, EquipmentRank.C, EquipmentRank.D];
   let cumulative = 0;
 
-  for (const r of ranks) {
-    const prob = isBoss ? RANK_DATA[r].probBoss : RANK_DATA[r].probNormal;
+  for (const r of rankCheckOrder) {
+    let prob = isBoss ? RANK_DATA[r].probBoss : RANK_DATA[r].probNormal;
+    
+    // Apply bonuses
+    if (r === EquipmentRank.S) prob += sBonus;
+    if (r === EquipmentRank.A) prob += aBonus;
+    
     cumulative += prob;
+    
     if (rand < cumulative) {
       rank = r;
       break;
@@ -206,19 +257,15 @@ export const generateDrop = (floor: number, isBoss: boolean = false): Equipment 
     type,
     power: finalPower,
     isEquipped: false,
-    rank
+    rank: rank
   };
 };
 
-export const calculateReincarnationStones = (floor: number): number => {
-  if (floor < 100) return 0;
-  // Formula: floor^2 / 100.
-  return Math.floor(Math.pow(floor, 2) / 100);
+export const createLog = (message: string, type: LogEntry['type']): LogEntry => {
+  return {
+    id: Math.random().toString(36).substring(7),
+    message,
+    type,
+    timestamp: Date.now()
+  };
 };
-
-export const createLog = (message: string, type: LogEntry['type']): LogEntry => ({
-  id: Math.random().toString(36).substring(7),
-  message,
-  type,
-  timestamp: Date.now()
-});

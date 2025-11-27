@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Player, Equipment, JobType, LogEntry, EquipmentType, JobData, MerchantUpgrades } from '../../types';
+import { Player, Equipment, JobType, LogEntry, EquipmentType, JobData, MerchantUpgrades, ReincarnationUpgrades } from '../../types';
 import { Button } from '../ui/Button';
-import { JOB_DEFINITIONS, JOB_ORDER, RANK_DATA, MERCHANT_ITEMS } from '../../constants';
+import { JOB_DEFINITIONS, JOB_ORDER, RANK_DATA, MERCHANT_ITEMS, REINCARNATION_ITEMS } from '../../constants';
 import { ProgressBar } from '../ui/ProgressBar';
-import { calculateUpgradeCost } from '../../utils/mechanics';
+import { calculateUpgradeCost, formatNumber } from '../../utils/mechanics';
 
 interface ControlTabsProps {
   player: Player;
@@ -13,14 +13,15 @@ interface ControlTabsProps {
   onEquip: (item: Equipment) => void;
   onJobChange: (newJob: JobType) => void;
   onBuyUpgrade: (key: keyof MerchantUpgrades) => void;
+  onBuyReincarnationUpgrade: (key: keyof ReincarnationUpgrades) => void;
   canPromote: boolean;
   nextJob: JobType | null;
 }
 
 export const ControlTabs: React.FC<ControlTabsProps> = ({ 
-  player, inventory, equipped, logs, onEquip, onJobChange, onBuyUpgrade, canPromote, nextJob
+  player, inventory, equipped, logs, onEquip, onJobChange, onBuyUpgrade, onBuyReincarnationUpgrade, canPromote, nextJob
 }) => {
-  const [activeTab, setActiveTab] = useState<'equip' | 'job' | 'skill' | 'merchant' | 'log'>('log');
+  const [activeTab, setActiveTab] = useState<'equip' | 'job' | 'skill' | 'merchant' | 'reincarnation' | 'log'>('log');
   const logEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll logs
@@ -36,7 +37,7 @@ export const ControlTabs: React.FC<ControlTabsProps> = ({
     <div className="bg-slate-900 border-t border-slate-700 flex flex-col h-[400px]">
       {/* Tabs */}
       <div className="flex border-b border-slate-700 overflow-x-auto">
-        {(['equip', 'job', 'skill', 'merchant', 'log'] as const).map((tab) => (
+        {(['equip', 'job', 'skill', 'merchant', 'reincarnation', 'log'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -45,7 +46,7 @@ export const ControlTabs: React.FC<ControlTabsProps> = ({
                 ? 'text-indigo-400 border-b-2 border-indigo-400 bg-slate-800' 
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}
           >
-            {tab === 'equip' ? '装備' : tab === 'job' ? '職業' : tab === 'skill' ? 'スキル' : tab === 'merchant' ? '商人' : 'ログ'}
+            {tab === 'equip' ? '装備' : tab === 'job' ? '職業' : tab === 'skill' ? 'スキル' : tab === 'merchant' ? '商人' : tab === 'reincarnation' ? '転生' : 'ログ'}
           </button>
         ))}
       </div>
@@ -220,7 +221,7 @@ export const ControlTabs: React.FC<ControlTabsProps> = ({
         {activeTab === 'merchant' && (
            <div className="space-y-4">
               <div className="bg-amber-900/20 p-3 rounded border border-amber-800 text-center">
-                <span className="text-amber-500 font-bold text-sm">💰 所持金: {player.gold.toLocaleString()} G</span>
+                <span className="text-amber-500 font-bold text-sm">💰 所持金: {formatNumber(player.gold)} G</span>
               </div>
               <div className="grid grid-cols-1 gap-3">
                 {MERCHANT_ITEMS.map((item) => {
@@ -242,10 +243,51 @@ export const ControlTabs: React.FC<ControlTabsProps> = ({
                          variant={canAfford ? 'primary' : 'secondary'}
                          disabled={!canAfford}
                          onClick={() => onBuyUpgrade(item.key)}
+                         repeatOnHold={true}
                          className={`min-w-[80px] text-xs flex flex-col items-center justify-center h-10 ${canAfford ? 'bg-amber-600 hover:bg-amber-500' : 'opacity-50 cursor-not-allowed'}`}
                        >
                          <div>購入</div>
-                         <div className="font-mono text-[10px]">{cost.toLocaleString()}G</div>
+                         <div className="font-mono text-[10px]">{formatNumber(cost)}G</div>
+                       </Button>
+                    </div>
+                  );
+                })}
+              </div>
+           </div>
+        )}
+
+        {/* REINCARNATION TAB */}
+        {activeTab === 'reincarnation' && (
+           <div className="space-y-4">
+              <div className="bg-purple-900/20 p-3 rounded border border-purple-800 text-center">
+                <span className="text-purple-400 font-bold text-sm">🔮 転生石: {formatNumber(player.reincarnationStones)} 個</span>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                {REINCARNATION_ITEMS.map((item) => {
+                  const currentLevel = player.reincarnationUpgrades?.[item.key] || 0;
+                  // Reuse calculateUpgradeCost (base * 1.2^lv)
+                  const cost = calculateUpgradeCost(item.baseCost, currentLevel);
+                  const canAfford = player.reincarnationStones >= cost;
+
+                  return (
+                    <div key={item.key} className="bg-slate-800 p-3 rounded border border-slate-700 flex justify-between items-center gap-2">
+                       <div className="flex-1">
+                         <div className="flex items-center gap-2">
+                            <span className="font-bold text-purple-200 text-sm">{item.name}</span>
+                            <span className="text-xs bg-slate-900 text-slate-400 px-1.5 py-0.5 rounded">Lv.{currentLevel}</span>
+                         </div>
+                         <div className="text-xs text-purple-300/70 mt-0.5">{item.desc}</div>
+                       </div>
+                       <Button 
+                         size="sm" 
+                         variant={canAfford ? 'primary' : 'secondary'}
+                         disabled={!canAfford}
+                         onClick={() => onBuyReincarnationUpgrade(item.key)}
+                         repeatOnHold={true}
+                         className={`min-w-[80px] text-xs flex flex-col items-center justify-center h-10 ${canAfford ? 'bg-purple-600 hover:bg-purple-500' : 'opacity-50 cursor-not-allowed'}`}
+                       >
+                         <div>習得</div>
+                         <div className="font-mono text-[10px]">{formatNumber(cost)}個</div>
                        </Button>
                     </div>
                   );
