@@ -1,3 +1,4 @@
+
 export enum EquipmentType {
   WEAPON = 'WEAPON',
   HELM = 'HELM',
@@ -17,9 +18,12 @@ export interface Equipment {
   id: string;
   name: string;
   type: EquipmentType;
-  power: number;
+  basePower: number; // New: Fixed base power determined by Tier
+  power: number;     // Calculated power (Base * Rank * Plus)
   isEquipped: boolean;
   rank: EquipmentRank;
+  tier: number;      // New: Tier 1-30
+  plus: number;      // New: Enhancement level (+0 to +Max)
 }
 
 export enum JobType {
@@ -67,6 +71,7 @@ export interface MerchantUpgrades {
   attackBonus: number;      // 攻撃UP (+10/lv)
   critRate: number;         // クリティカル率UP (+1%/lv)
   critDamage: number;       // クリティカルダメージUP (+10%/lv)
+  giantKilling: number;     // ジャイアントキリング (対ボスダメージ +2%/lv)
   weaponBoost: number;      // 武器補正 (+1%/lv)
   helmBoost: number;        // 兜補正 (+1%/lv)
   armorBoost: number;       // 鎧補正 (+1%/lv)
@@ -77,24 +82,41 @@ export interface ReincarnationUpgrades {
   xpBoost: number;          // 経験値UP (+1%/lv)
   goldBoost: number;        // ゴールドUP (+1%/lv)
   stoneBoost: number;       // 転生石UP (+1%/lv)
-  startFloor: number;       // 開始階層UP (+100階/lv)
-  equipAProb: number;       // A装備獲得率UP (+1%/lv)
-  equipSProb: number;       // S装備獲得率UP (+1%/lv)
-  baseAttackBoost: number;  // 基礎攻撃力UP (+100/lv)
-  autoPromote: number;      // 自動転職 (Lv check against job index)
-  autoEquip: number;        // 自動最強装備 (0 or 1)
-  
-  // Skill Specific Probabilities (+1%/lv)
-  prob_slash: number;
-  prob_power_attack: number;
-  prob_holy_strike: number;
-  prob_divine: number;
-  prob_meteor: number;
-  prob_galaxy: number;
-  prob_void: number;
-  prob_god_blow: number;
-  prob_infinity: number;
-  prob_legend: number;
+  startFloor: number;       // 開始階層 (+100 floor/lv)
+  autoPromote: number;      // 自動転職
+  autoEquip: number;        // 自動装備
+  autoMerchant: number;     // 自動商人購入
+  itemFilter: number;       // ドロップ選別
+  farming: number;          // 自動周回
+  autoEnhance: number;      // 自動装備強化 (New)
+  itemPersistence: number;  // 装備継承 (Lv1:B, Lv2:A, Lv3:S)
+  baseAttackBoost: number;  // 基礎攻撃力UP
+  enemyHpDown: number;      // 敵HP低下
+  skillDamageBoost: number; // スキル威力UP
+  priceDiscount: number;    // 購入価格割引
+  concentration: number;    // スキル発動率UP
+  vitalSpot: number;        // クリティカル率UP
+  hyperSpeed: number;       // 攻撃速度UP
+  awakening: number;        // 覚醒
+}
+
+export interface ActiveSkillState {
+  isActive: boolean;
+  endTime: number;
+  cooldownEnd: number;
+  duration: number;
+}
+
+export interface ActiveSkillsState {
+  concentration: ActiveSkillState;
+  vitalSpot: ActiveSkillState;
+  hyperSpeed: ActiveSkillState;
+  awakening: ActiveSkillState;
+}
+
+export interface FarmingMode {
+  min: number;
+  max: number;
 }
 
 export interface Player {
@@ -105,13 +127,15 @@ export interface Player {
   jobLevel: number;
   gold: number;
   floor: number;
-  maxFloorReached: number; // Track max floor for reincarnation limit
+  maxFloorReached: number;
   baseAttack: number;
-  maxHp: number; // For visualization, though player doesn't take damage in this spec
-  skillMastery: Record<string, SkillMastery>; // Key is skill name
+  maxHp: number;
+  skillMastery: Record<string, SkillMastery>;
   reincarnationStones: number;
   merchantUpgrades: MerchantUpgrades;
   reincarnationUpgrades: ReincarnationUpgrades;
+  autoMerchantKeys: Partial<Record<keyof MerchantUpgrades, boolean>>;
+  dropPreferences?: Partial<Record<EquipmentType, boolean>>;
 }
 
 export interface LogEntry {
@@ -125,11 +149,11 @@ export interface GameState {
   player: Player;
   enemy: Enemy | null;
   inventory: Equipment[];
-  equipped: {
-    [key in EquipmentType]?: Equipment;
-  };
+  equipped: Partial<Record<EquipmentType, Equipment>>;
   logs: LogEntry[];
-  bossTimer: number | null; // null if not boss fight, otherwise seconds remaining
+  bossTimer: number | null;
   autoBattleEnabled: boolean;
-  hardMode: boolean;
+  activeSkills: ActiveSkillsState;
+  farmingMode: FarmingMode | null;
+  rareDropItem: Equipment | null; // For modal display
 }

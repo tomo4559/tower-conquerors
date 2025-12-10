@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { GameState, Player, LogEntry, JobType, EquipmentRank } from '../types';
+import { GameState, Player, LogEntry, JobType, EquipmentRank, EquipmentType } from '../types';
 import { createLog } from '../utils/mechanics';
 import { BOSS_TIME_LIMIT } from '../constants';
 
-const INITIAL_PLAYER: Player = {
+export const getInitialPlayer = (): Player => ({
   level: 1,
   currentXp: 0,
-  requiredXp: 50,
+  requiredXp: 40,
   job: JobType.NOVICE,
   jobLevel: 1,
   gold: 0,
@@ -20,6 +20,7 @@ const INITIAL_PLAYER: Player = {
     attackBonus: 0,
     critRate: 0,
     critDamage: 0,
+    giantKilling: 0,
     weaponBoost: 0,
     helmBoost: 0,
     armorBoost: 0,
@@ -28,36 +29,50 @@ const INITIAL_PLAYER: Player = {
   reincarnationUpgrades: {
     autoPromote: 0,
     autoEquip: 0,
+    autoMerchant: 0,
+    itemFilter: 0,
+    farming: 0,
+    autoEnhance: 0,
     xpBoost: 0,
     goldBoost: 0,
     stoneBoost: 0,
     startFloor: 0,
-    equipAProb: 0,
-    equipSProb: 0,
     baseAttackBoost: 0,
-    prob_slash: 0,
-    prob_power_attack: 0,
-    prob_holy_strike: 0,
-    prob_divine: 0,
-    prob_meteor: 0,
-    prob_galaxy: 0,
-    prob_void: 0,
-    prob_god_blow: 0,
-    prob_infinity: 0,
-    prob_legend: 0,
+    enemyHpDown: 0,
+    skillDamageBoost: 0,
+    priceDiscount: 0,
+    concentration: 0,
+    vitalSpot: 0,
+    hyperSpeed: 0,
+    awakening: 0,
+    itemPersistence: 0,
+  },
+  autoMerchantKeys: {},
+  dropPreferences: {
+      [EquipmentType.WEAPON]: true,
+      [EquipmentType.HELM]: true,
+      [EquipmentType.ARMOR]: true,
+      [EquipmentType.SHIELD]: true,
   }
-};
+});
 
-export const INITIAL_STATE: GameState = {
-  player: INITIAL_PLAYER,
+export const getInitialState = (): GameState => ({
+  player: getInitialPlayer(),
   enemy: null,
   inventory: [],
   equipped: {},
   logs: [],
   bossTimer: null,
   autoBattleEnabled: true,
-  hardMode: false,
-};
+  activeSkills: {
+    concentration: { isActive: false, endTime: 0, cooldownEnd: 0, duration: 0 },
+    vitalSpot: { isActive: false, endTime: 0, cooldownEnd: 0, duration: 0 },
+    hyperSpeed: { isActive: false, endTime: 0, cooldownEnd: 0, duration: 0 },
+    awakening: { isActive: false, endTime: 0, cooldownEnd: 0, duration: 0 }
+  },
+  farmingMode: null,
+  rareDropItem: null
+});
 
 export const useGameState = () => {
   const [gameState, setGameState] = useState<GameState>(() => {
@@ -68,17 +83,40 @@ export const useGameState = () => {
         // Migrations
         if (!parsed.player.skillMastery) parsed.player.skillMastery = {};
         if (typeof parsed.player.reincarnationStones === 'undefined') parsed.player.reincarnationStones = 0;
-        if (typeof parsed.hardMode === 'undefined') parsed.hardMode = false;
-        if (!parsed.player.merchantUpgrades) parsed.player.merchantUpgrades = { ...INITIAL_PLAYER.merchantUpgrades };
-        if (!parsed.player.reincarnationUpgrades) parsed.player.reincarnationUpgrades = { ...INITIAL_PLAYER.reincarnationUpgrades };
+        
+        const initialPlayer = getInitialPlayer();
+
+        if (!parsed.player.merchantUpgrades) parsed.player.merchantUpgrades = { ...initialPlayer.merchantUpgrades };
+        if (!parsed.player.reincarnationUpgrades) parsed.player.reincarnationUpgrades = { ...initialPlayer.reincarnationUpgrades };
         if (typeof parsed.player.maxFloorReached === 'undefined') parsed.player.maxFloorReached = parsed.player.floor || 1;
+        if (!parsed.player.autoMerchantKeys) parsed.player.autoMerchantKeys = {};
+        if (!parsed.activeSkills) parsed.activeSkills = { ...getInitialState().activeSkills };
+        if (typeof parsed.farmingMode === 'undefined') parsed.farmingMode = null;
+        if (!parsed.player.dropPreferences) parsed.player.dropPreferences = { ...initialPlayer.dropPreferences };
+        if (typeof parsed.rareDropItem === 'undefined') parsed.rareDropItem = null;
         
         // Safe check for new keys in existing save
-        const requiredReincarnationKeys = Object.keys(INITIAL_PLAYER.reincarnationUpgrades);
+        const requiredReincarnationKeys = Object.keys(initialPlayer.reincarnationUpgrades);
         requiredReincarnationKeys.forEach(key => {
+            // @ts-ignore
             if (typeof parsed.player.reincarnationUpgrades[key] === 'undefined') {
+                // @ts-ignore
                 parsed.player.reincarnationUpgrades[key] = 0;
             }
+        });
+        
+        // Ensure giantKilling exists in merchantUpgrades
+        if (typeof parsed.player.merchantUpgrades.giantKilling === 'undefined') {
+            parsed.player.merchantUpgrades.giantKilling = 0;
+        }
+        
+        // Ensure activeSkills structure
+        ['concentration', 'vitalSpot', 'hyperSpeed', 'awakening'].forEach(skill => {
+             // @ts-ignore
+             if (!parsed.activeSkills[skill]) {
+                 // @ts-ignore
+                 parsed.activeSkills[skill] = { isActive: false, endTime: 0, cooldownEnd: 0, duration: 0 };
+             }
         });
 
         // Equipment Rank Migration
@@ -91,10 +129,10 @@ export const useGameState = () => {
         return parsed;
       } catch (e) {
         console.error("Failed to load save", e);
-        return INITIAL_STATE;
+        return getInitialState();
       }
     }
-    return INITIAL_STATE;
+    return getInitialState();
   });
 
   const stateRef = useRef(gameState);
@@ -116,7 +154,7 @@ export const useGameState = () => {
     setGameState, 
     stateRef, 
     addLog,
-    INITIAL_PLAYER,
-    INITIAL_STATE
+    getInitialPlayer, 
+    INITIAL_STATE: getInitialState()
   };
 };

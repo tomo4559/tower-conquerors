@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface ProgressBarProps {
@@ -7,6 +8,7 @@ interface ProgressBarProps {
   className?: string;
   label?: string;
   height?: string;
+  displayValue?: string;
 }
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({ 
@@ -15,7 +17,8 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   color = "bg-blue-500", 
   className = "", 
   label,
-  height = "h-2"
+  height = "h-2",
+  displayValue
 }) => {
   const percentage = Math.min(100, Math.max(0, (value / max) * 100));
 
@@ -24,7 +27,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
       {label && (
         <div className="flex justify-between text-xs mb-1 text-slate-400">
           <span>{label}</span>
-          <span>{Math.floor(value)} / {max}</span>
+          <span>{displayValue || `${Math.floor(value)} / ${max}`}</span>
         </div>
       )}
       <div className={`w-full bg-slate-800 rounded-full overflow-hidden ${height}`}>
